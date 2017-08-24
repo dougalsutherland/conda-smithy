@@ -186,10 +186,32 @@ class Test_linter(unittest.TestCase):
         lints = linter.lintify(meta)
         self.assertIn(expected_message, lints)
 
+        meta = {'requirements': OrderedDict([['run', 'a'],
+                                             ['error', 'a'],
+                                             ['build', 'a']])}
+        lints = linter.lintify(meta)
+        self.assertIn(expected_message, lints)
+
         meta = {'requirements': OrderedDict([['build', 'a'],
                                              ['run', 'a']])}
         lints = linter.lintify(meta)
         self.assertNotIn(expected_message, lints)
+
+        meta = {'requirements': OrderedDict([['build', 'a'],
+                                             ['run', 'a'],
+                                             ['error', 'a']])}
+        lints = linter.lintify(meta)
+        self.assertNotIn(expected_message, lints)
+
+    def test_bad_requirements_key(self):
+        expected_message = ("The requirements section has unexpected keys: "
+                            "error, fake.")
+        meta = {'requirements': OrderedDict([['run', 'a'],
+                                             ['error', 'a'],
+                                             ['fake', 'a'],
+                                             ['build', 'a']])}
+        lints = linter.lintify(meta)
+        self.assertIn(expected_message, lints)
 
     def test_no_sha_with_dl(self):
         expected_message = ("When defining a source/url please add a sha256, "
