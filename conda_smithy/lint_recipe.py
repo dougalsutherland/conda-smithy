@@ -110,25 +110,32 @@ def lintify(meta, recipe_dir=None):
         lints.append('The recipe must have a `build/number` section.')
 
     # 8: The build section should be before the run section in requirements.
-    requirements_order_sorted = sorted(requirements_section,
-                                       key=REQUIREMENTS_ORDER.index)
-    if list(requirements_section.keys()) != requirements_order_sorted:
+    seen_requirements = frozenset(requirements_section)
+    expected_reqs = frozenset(REQUIREMENTS_ORDER)
+    extra_requirements = seen_requirements - expected_reqs
+    if extra_requirements:
+        lints.append('The requirements section has unexpected keys: {}.'
+                     .format(', '.join(sorted(extra_requirements))))
+
+    # 9: The build section should be before the run section in requirements.
+    reqs_order = [r for r in requirements_section.keys() if r in expected_reqs]
+    if reqs_order != sorted(reqs_order, key=REQUIREMENTS_ORDER.index):
         lints.append('The `requirements/build` section should be defined '
                      'before the `requirements/run` section.')
 
-    # 9: Files downloaded should have a hash.
+    # 10: Files downloaded should have a hash.
     if ('url' in source_section and
             not ({'sha1', 'sha256', 'md5'} & set(source_section.keys()))):
         lints.append('When defining a source/url please add a sha256, sha1 '
                      'or md5 checksum (sha256 preferably).')
 
-    # 10: License should not include the word 'license'.
+    # 11: License should not include the word 'license'.
     license = about_section.get('license', '').lower()
     if 'license' in license.lower():
         lints.append('The recipe `license` should not include the word '
                      '"License".')
 
-    # 11: There should be one empty line at the end of the file.
+    # 12: There should be one empty line at the end of the file.
     if recipe_dir is not None and os.path.exists(meta_fname):
         with io.open(meta_fname, 'r') as f:
             lines = f.read().split('\n')
@@ -143,7 +150,7 @@ def lintify(meta, recipe_dir=None):
             lints.append('There are too few lines.  There should be one empty '
                          'line at the end of the file.')
 
-    # 12: License family must be valid (conda-build checks for that)
+    # 13: License family must be valid (conda-build checks for that)
     try:
         ensure_valid_license_family(meta)
     except RuntimeError as e:
